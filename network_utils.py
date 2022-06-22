@@ -16,17 +16,9 @@ def build_mlp(
     Returns:
         An instance of (a subclass of) nn.Module representing the network.
 
-    TODO:
-    Build a feed-forward network (multi-layer perceptron, or mlp) that maps
-    input_size-dimensional vectors to output_size-dimensional vectors.
-    It should have 'n_layers' hidden layers, each of 'size' units and followed
-    by a ReLU nonlinearity. The final layer should be linear (no ReLU).
-
-    "nn.Linear" and "nn.Sequential" may be helpful.
     """
 
-    #######################################################
-    #########   YOUR CODE HERE - 7-15 lines.   ############
+    
     model = []
     
     model.append(nn.Linear(input_size,size))
@@ -39,11 +31,9 @@ def build_mlp(
     model = nn.Sequential(*model)
     return model
 
-    #######################################################
-    #########          END YOUR CODE.          ############
 
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device( 'cpu')
 
 def np2torch(x, cast_double_to_float=True):
     """

@@ -30,22 +30,16 @@ class BasePolicy:
         Returns:
             sampled_actions: np.array of shape [batch size, *shape of action]
 
-        TODO:
-        Call self.action_distribution to get the distribution over actions,
-        then sample from that distribution. You will have to convert the
-        actions to a numpy array, via numpy(). Put the result in a variable
-        called sampled_actions (which will be returned).
+       
         """
         observations = np2torch(observations)
-        #######################################################
-        #########   YOUR CODE HERE - 1-3 lines.    ############
+        
 
 
         sampled_actions = self.action_distribution(observations)
 
         sampled_actions=sampled_actions.sample().numpy()
-        #######################################################
-        #########          END YOUR CODE.          ############
+        
         return sampled_actions
 
 
@@ -64,48 +58,38 @@ class CategoricalPolicy(BasePolicy, nn.Module):
 
         See https://pytorch.org/docs/stable/distributions.html#categorical
         """
-        #######################################################
-        #########   YOUR CODE HERE - 1-2 lines.    ############
+       
+        
         hold =self.network(observations)
         distribution= ptd.Categorical(logits=hold)
 
-        #######################################################
-        #########          END YOUR CODE.          ############
+        
         return distribution
 
 
 class GaussianPolicy(BasePolicy, nn.Module):
     def __init__(self, network, action_dim):
         """
-        After the basic initialization, you should create a nn.Parameter of
-        shape [dim(action space)] and assign it to self.log_std.
         A reasonable initial value for log_std is 0 (corresponding to an
         initial std of 1), but you are welcome to try different values.
         """
         nn.Module.__init__(self)
         self.network = network
-        #######################################################
-        #########   YOUR CODE HERE - 1 line.       ############
 
-        self.log_std = nn.Parameter(torch.zeros(action_dim))
-        #######################################################
-        #########          END YOUR CODE.          ############
+        
+        self.register_parameter(name = "log_std", param = nn.Parameter(data = torch.zeros(action_dim)))
+        
 
     def std(self):
         """
         Returns:
             std: torch.Tensor of shape [dim(action space)]
 
-        The return value contains the standard deviations for each dimension
-        of the policy's actions. It can be computed from self.log_std
+
         """
-        #######################################################
-        #########   YOUR CODE HERE - 1 line.       ############
-        data = self.log_std.data
-        #?
-        std = data.exp()
-        #######################################################
-        #########          END YOUR CODE.          ############
+
+        std = self.log_std.exp()
+
         return std
 
     def action_distribution(self, observations):
@@ -118,21 +102,13 @@ class GaussianPolicy(BasePolicy, nn.Module):
                 Gaussian distribution whose mean (loc) is computed by
                 self.network and standard deviation (scale) is self.std()
 
-        Note: PyTorch doesn't have a diagonal Gaussian built in, but you can
-            fashion one out ofpytorch get std
-            (a) torch.distributions.MultivariateNormal
-            or
-            (b) A combination of torch.distributions.Normal
-                             and torch.distributions.Independent
+       
         """
-        #######################################################
-        #########   YOUR CODE HERE - 2-4 lines.    ############
+      
 
         t=self.network(observations)
-
+        
         dag=torch.diag(self.std())
         distribution = ptd.MultivariateNormal(loc=t,scale_tril=dag)
         
-        #######################################################
-        #########          END YOUR CODE.          ############
         return distribution

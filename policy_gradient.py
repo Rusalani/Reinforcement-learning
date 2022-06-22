@@ -21,9 +21,6 @@ class PolicyGradient(object):
                 config: class with hyperparameters
                 logger: logger instance from the logging module
 
-        You do not need to implement anything in this function. However,
-        you will need to use self.discrete, self.observation_dim,
-        self.action_dim, and self.lr in other methods.
         """
         # directory for training outputs
         if not os.path.exists(config.output_path):
@@ -53,22 +50,17 @@ class PolicyGradient(object):
 
     def init_policy(self):
         """
-        Please do the following:
-        1. Create a network using build_mlp. It should map vectors of size
-           self.observation_dim to vectors of size self.action_dim, and use
-           the number of layers and layer size from self.config
+        
+        1. Create a network using build_mlp. 
         2. If self.discrete = True (meaning that the actions are discrete, i.e.
            from the set {0, 1, ..., N-1} where N is the number of actions),
            instantiate a CategoricalPolicy.
            If self.discrete = False (meaning that the actions are continuous,
            i.e. elements of R^d where d is the dimension), instantiate a
            GaussianPolicy. Either way, assign the policy to self.policy
-        3. Create an optimizer for the policy, with learning rate self.lr
-           Note that the policy is an instance of (a subclass of) nn.Module, so
-           you can call the parameters() method to get its parameters.
+        3. Create an optimizer for the policy
         """
-        #######################################################
-        #########   YOUR CODE HERE - 8-12 lines.   ############
+ 
         model = build_mlp(self.observation_dim,self.action_dim,self.config.n_layers,self.config.layer_size)
         
         if self.discrete:
@@ -76,15 +68,13 @@ class PolicyGradient(object):
         else:
             self.policy = GaussianPolicy(model,self.action_dim)
         
-        #self.optimizer = torch.optim.Adam(model.parameters() ,lr=self.lr)
+        
+        
         self.optimizer = torch.optim.Adam(self.policy.parameters(), self.lr)
-        #######################################################
-        #########          END YOUR CODE.          ############
+
 
     def init_averages(self):
-        """
-        You don't have to change or use anything here.
-        """
+
         self.avg_reward = 0.
         self.max_reward = 0.
         self.std_reward = 0.
@@ -93,7 +83,7 @@ class PolicyGradient(object):
     def update_averages(self, rewards, scores_eval):
         """
         Update the averages.
-        You don't have to change or use anything here.
+        
 
         Args:
             rewards: deque
@@ -125,10 +115,6 @@ class PolicyGradient(object):
                 path["reward"] a numpy array of the corresponding rewards in the path
             total_rewards: the sum of all rewards encountered during this "path"
 
-        You do not have to implement anything in this function, but you will need to
-        understand what it returns, and it is worthwhile to look over the code
-        just so you understand how we are taking actions in the environment
-        and generating batches to train on.
         """
         episode = 0
         episode_rewards = []
@@ -174,44 +160,19 @@ class PolicyGradient(object):
         Return:
             returns: return G_t for each timestep
 
-        After acting in the environment, we record the observations, actions, and
-        rewards. To get the advantages that we need for the policy update, we have
-        to convert the rewards into returns, G_t, which are themselves an estimate
-        of Q^π (s_t, a_t):
-
-           G_t = r_t + γ r_{t+1} + γ^2 r_{t+2} + ... + γ^{T-t} r_T
-
-        where T is the last timestep of the episode.
-
-        Note that here we are creating a list of returns for each path
-
-        TODO: compute and return G_t for each timestep. Use self.config.gamma.
+       
         """
 
         all_returns = []
         for path in paths:
             rewards = path["reward"]
-            #######################################################
-            #########   YOUR CODE HERE - 5-10 lines.   ############
-            '''
-            returns=[]
-            res=1
-            index=1
-            for i in reversed(rewards):
-                returns.append(i*res)
-
-                res += pow(self.config.gamma,index)
-                index+=1
-
-            '''
+            
             returns = []
             g = [(pow(self.config.gamma,i)) for i in range(len(rewards))]
 
             for i in range(len(rewards)):
                 returns.append(np.sum(np.multiply(rewards[i:],g[:len(rewards)-i])))
-            #######################################################
-            #########          END YOUR CODE.          ############
-
+            
             all_returns.append(returns)
         returns = np.concatenate(all_returns)
 
@@ -224,22 +185,17 @@ class PolicyGradient(object):
         Returns:
             normalized_advantages: np.array of shape [batch size]
 
-        TODO:
-        Normalize the advantages so that they have a mean of 0 and standard
-        deviation of 1. Put the result in a variable called
-        normalized_advantages (which will be returned).
+
 
         Note:
         This function is called only if self.config.normalize_advantage is True.
         """
-        #######################################################
-        #########   YOUR CODE HERE - 1-2 lines.    ############
+        
         
 
         normalized_advantages = (advantages - advantages.mean(axis=0)) / advantages.std(axis=0)
 
-        #######################################################
-        #########          END YOUR CODE.          ############
+        
         return normalized_advantages
 
     def calculate_advantage(self, returns, observations):
@@ -286,24 +242,20 @@ class PolicyGradient(object):
         observations = np2torch(observations)
         actions = np2torch(actions)
         advantages = np2torch(advantages)
-        #######################################################
-        #########   YOUR CODE HERE - 5-7 lines.    ############
+        
         hold = self.policy.action_distribution(observations)
         logprob  = hold.log_prob(actions)
-        print(self.policy.log_std)
+        #print(self.policy.log_std)
         loss = -torch.mean(logprob * advantages)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        #######################################################
-        #########          END YOUR CODE.          ############
+        
 
     def train(self):
         """
         Performs training
 
-        You do not have to change or use anything here, but take a look
-        to see how all the code you've written fits together!
         """
         last_record = 0
 
